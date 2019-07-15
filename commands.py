@@ -67,7 +67,7 @@ class CompressToSize(FFMpegCommand):
     def __init__(self, command, ffmpeg_exe):
         super().__init__(command, ffmpeg_exe)
         self.allowed_filetypes = ['mp4', 'mov', 'mkv']
-        self.ffmpeg_comand = '{0} -v error -stats -i "{1}"  -vcodec libx265 -b {3} "{2}" -y'
+        self.ffmpeg_comand = '{0} -v error -stats -i "{1}"  -vcodec libx264 -b {3} -minrate {3} -maxrate {3} -bufsize {3} "{2}" -y'
         self.requires_additional_arguments = True
         self.additional_arguments_help = "Size to compress to? (eg: 12.5mb)"
         self.additional_arguments_validator = lambda s: convert_size_to_bytes(
@@ -97,7 +97,7 @@ class CompressToSize(FFMpegCommand):
             # video length in seconds
             length = ceil(float(video_info['format']['duration']))
 
-            new_bitrate = floor(desired_size/length*8)
+            new_bitrate = floor((desired_size*8)/length)
 
             new_filename = join(split(file)[0], ('compressed_'+split(file)[1]))
             full_command = self.ffmpeg_comand.format(
@@ -106,5 +106,34 @@ class CompressToSize(FFMpegCommand):
             call(
                 full_command, stdout=DEVNULL if not options['debug'] else None, stderr=DEVNULL if not options['debug'] else None)
             print(f'Done! Saved to "{new_filename}"')
+            new_files.append(new_filename)
+        return new_files
+
+
+
+class RemoveAudio(FFMpegCommand):
+    def __init__(self, command, ffmpeg_exe):
+        super().__init__(command, ffmpeg_exe)
+        self.allowed_filetypes = ['flv','mp4','mkv','mov']
+        self.ffmpeg_comand = '{0} -v error -stats -i "{1}" -c copy -copyts -an "{2}" -y'
+
+    def run(self, files, options=None, **kwargs):
+        new_files = []
+        for file in files:
+            if not exists(file):
+                print(f'File "{file}" does not exist. Ignoring...')
+                continue
+            filetype = splitext(file)[1][1:]
+            if filetype not in self.allowed_filetypes:
+                print(
+                    f'File type "{filetype}" not supported with command "{self.command}". Ignoring...')
+                continue
+            new_filename = join(split(file)[0], ('noaudio_'+split(file)[1]))
+            full_command = self.ffmpeg_comand.format(
+                self.ffmpeg_exe, file, new_filename)
+            print(f'Processing file "{file}"...')
+            call(
+                full_command, stdout=DEVNULL if not options['debug'] else None, stderr=DEVNULL if not options['debug'] else None)
+            print(f'Done! Saved to "{new_filename}')
             new_files.append(new_filename)
         return new_files

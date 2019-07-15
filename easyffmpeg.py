@@ -11,7 +11,7 @@ from os import path, name
 
 # Globals
 #========================================================#
-commands = {"FLV to MP4": FLVtoMP4, "Compress to Size": CompressToSize}
+commands = {"FLV to MP4": FLVtoMP4, "Compress to Size": CompressToSize,'Remove Audio':RemoveAudio}
 resources_dir = local_path('resources')
 ffmpeg_exe = path.join(resources_dir, 'ffmpeg.exe')
 ffprobe_exe = path.join(resources_dir, 'ffprobe.exe')
