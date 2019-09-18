@@ -6,6 +6,44 @@
 from pyparsing import Word,nums,CaselessLiteral,ParseException
 from subprocess import Popen,PIPE,STDOUT
 from json import loads
+from os import name
+from ctypes import WinDLL,c_uint
+from colorama import Back,Fore,Style,init
+
+init(autoreset=True,convert=True)
+class Colors:
+    ASK=Fore.MAGENTA+Style.BRIGHT
+    WARN=Fore.YELLOW+Style.BRIGHT
+    ERROR=Fore.RED+Style.BRIGHT
+    INFO=Fore.CYAN+Style.BRIGHT
+    DEBUG=Fore.GREEN+Style.BRIGHT
+    RESET=Style.RESET_ALL
+
+
+_kernel32=None
+def started_from_gui():
+    if not is_executable(): return False
+    #if on windows
+    if name=='nt':
+        global _kernel32
+        if not _kernel32:
+            _kernel32=WinDLL('kernel32',use_last_error=True)
+        process_array=(c_uint*1)()
+        num_processes=_kernel32.GetConsoleProcessList(process_array,1)
+        if num_processes==2:
+            return True
+        return False
+    #on linux
+    else:
+        return False
+
+def input_color_supported(prompt:str):
+    """
+    Workaround wrapper for `input()` which supports colorama colors.
+    """
+    print(prompt,end='')
+    return input()
+
 def ask(question,options=None,default=None,validator=None):
     """
     Ask a question to the user, and return the answer once valid.\n
@@ -30,7 +68,7 @@ def ask(question,options=None,default=None,validator=None):
                 is_default=(default is not None and ((is_int(default) and default==i) or (isinstance(default,str) and (default.lower()==option.lower()))))
                 print((f'[{i+1}]' if is_default else f'{i+1}')+'>'+('' if is_default else spacing)+option)
         #Get input
-        answer=input('> ')
+        answer=input_color_supported('> ')
         #Check input
         #Check options, if given
         if options is not None:
@@ -79,7 +117,7 @@ def askYN(question:str,default='')->bool:
     response='0'
     qText=(question+(' ['+default.lower().strip()+']') if default and default[0] in ('y','n') else question)+': '
     while response[0] not in ('y','n'):
-        response=input(qText).strip().lower()
+        response=input_color_supported(qText).strip().lower()
         if not response or response.isspace():
                 response=default if default in ('y','n') else '0'
 

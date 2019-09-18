@@ -10,8 +10,9 @@
             "request": "launch",
             "program": "${workspaceFolder}/easyffmpeg.py",//"${file}",
             "args": [
-                "-d",
-                "C:\\Users\\jtpet\\Videos\\video.mp4"
+                 "-d",
+                "compressed_test.mp4"
+
                 
                 
             ],
